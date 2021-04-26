@@ -1,4 +1,4 @@
-package main.java.com.group4.gateway;
+package com.group4.gateway;
 
 import org.json.JSONException;
 import org.json.JSONObject;
