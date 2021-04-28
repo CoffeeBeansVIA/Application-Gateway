@@ -8,6 +8,7 @@ import java.net.http.WebSocket;
 import java.nio.ByteBuffer;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CompletableFuture;
+import java.nio.charset.StandardCharsets;
 
 public class WebsocketClient implements WebSocket.Listener {
     private WebSocket server = null;
@@ -34,10 +35,12 @@ public class WebsocketClient implements WebSocket.Listener {
         // This WebSocket will invoke onText, onBinary, onPing, onPong or onClose methods on the associated listener (i.e. receive methods) up to n more times
         webSocket.request(1);
         System.out.println("WebSocket Listener has been opened for requests.");
+        sendDownLink("{cmd: 'tx', EUI: '926F9B5931FCA94C', port: 1, confirmed: true, data: 'test text'}");
+        System.out.println("sendDownLink executed");
     }
 
     //onError()
-    public void onError​(WebSocket webSocket, Throwable error) {
+    public void onError(WebSocket webSocket, Throwable error) {
         System.out.println("A " + error.getCause() + " exception was thrown.");
         System.out.println("Message: " + error.getLocalizedMessage());
         webSocket.abort();
@@ -51,7 +54,7 @@ public class WebsocketClient implements WebSocket.Listener {
     }
 
     //onPing()
-    public CompletionStage<?> onPing​(WebSocket webSocket, ByteBuffer message) {
+    public CompletionStage<?> onPing(WebSocket webSocket, ByteBuffer message) {
         webSocket.request(1);
         System.out.println("Ping: Client ---> Server");
         System.out.println(message.asCharBuffer().toString());
@@ -59,7 +62,7 @@ public class WebsocketClient implements WebSocket.Listener {
     }
 
     //onPong()
-    public CompletionStage<?> onPong​(WebSocket webSocket, ByteBuffer message) {
+    public CompletionStage<?> onPong(WebSocket webSocket, ByteBuffer message) {
         webSocket.request(1);
         System.out.println("Pong: Client ---> Server");
         System.out.println(message.asCharBuffer().toString());
@@ -67,8 +70,14 @@ public class WebsocketClient implements WebSocket.Listener {
     }
 
     //onText()
-    public CompletionStage<?> onText​(WebSocket webSocket, CharSequence data, boolean last) throws JSONException {
-        String indented = (new JSONObject(data.toString())).toString(4);
+    public CompletionStage<?> onText(WebSocket webSocket, CharSequence data, boolean last) {
+        String indented = null;
+        try {
+            indented = (new JSONObject(data.toString())).toString(4);
+        } catch (JSONException e) {
+            System.out.println("onText error");
+            e.printStackTrace();
+        }
         System.out.println(indented);
         webSocket.request(1);
         return new CompletableFuture().completedFuture("onText() completed.").thenAccept(System.out::println);
