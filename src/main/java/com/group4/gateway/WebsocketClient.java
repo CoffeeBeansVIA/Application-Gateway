@@ -11,6 +11,8 @@ import java.util.concurrent.CompletableFuture;
 
 public class WebsocketClient implements WebSocket.Listener {
     private WebSocket server = null;
+    private final String URL = "wss://iotnet.cibicom.dk/app?token=vnoTwwAAABFpb3RuZXQuY2liaWNvbS5ka8Jer376b_vS6G62ZSL3pMU=";
+    private final String TOKEN = "0004A30B0021B92F";
 
     // Send down-link message to device
     // Must be in Json format according to https://github.com/ihavn/IoT_Semester_project/blob/master/LORA_NETWORK_SERVER.md
@@ -18,8 +20,8 @@ public class WebsocketClient implements WebSocket.Listener {
         server.sendText(jsonTelegram,true);
     }
 
-    // E.g. url: "wss://iotnet.teracom.dk/app?token=??????????????????????????????????????????????="
-    // Substitute ????????????????? with the token you have been given
+    // E.g. url: "wss://iotnet.cibicom.dk/app?token=vnoTwwAAABFpb3RuZXQuY2liaWNvbS5ka8Jer376b_vS6G62ZSL3pMU="
+    // Substitute ????????????????? with the token you have been given - 0004A30B0021B92F
     public WebsocketClient(String url) {
         HttpClient client = HttpClient.newHttpClient();
         CompletableFuture<WebSocket> ws = client.newWebSocketBuilder()
