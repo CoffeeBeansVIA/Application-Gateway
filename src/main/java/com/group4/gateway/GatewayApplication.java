@@ -10,5 +10,10 @@ public class GatewayApplication {
 //    }
     public static void main(String[] args) {
         WebsocketClient websocketClient = new WebsocketClient("wss://iotnet.cibicom.dk/app?token=vnoTwwAAABFpb3RuZXQuY2liaWNvbS5ka8Jer376b_vS6G62ZSL3pMU=");
+        websocketClient.sendDownLink("{cmd: 'tx', EUI: '0004A30B0021B92F', port: 1, confirmed: true, data: 'test text'}");
+
+        while (true) {
+
+        }
     }
 }
