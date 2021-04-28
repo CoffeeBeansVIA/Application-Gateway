@@ -23,11 +23,11 @@ public class WebsocketClient implements WebSocket.Listener {
 
     // E.g. url: "wss://iotnet.cibicom.dk/app?token=vnoTwwAAABFpb3RuZXQuY2liaWNvbS5ka8Jer376b_vS6G62ZSL3pMU="
     // Substitute ????????????????? with the token you have been given - 0004A30B0021B92F
-    public WebsocketClient(String url) {
+    public WebsocketClient() {
         executorService = Executors.newScheduledThreadPool(1);
         HttpClient client = HttpClient.newHttpClient();
         CompletableFuture<WebSocket> ws = client.newWebSocketBuilder()
-                .buildAsync(URI.create(url), this);
+                .buildAsync(URI.create(URL), this);
         server = ws.join();
     }
 	

@@ -1,12 +1,12 @@
 package com.group4.gateway.mock;
 
-import com.group4.gateway.lorawan.LoRaWanInterface;
+import com.group4.gateway.lorawan.ILoRaWan;
 
 import java.beans.PropertyChangeListener;
 import java.net.http.WebSocket;
 import java.util.ArrayDeque;
 
-public class LoraWanMock implements WebSocket.Listener, Runnable, LoRaWanInterface {
+public class LoraWanMock implements WebSocket.Listener, Runnable, ILoRaWan {
     private final ArrayDeque<String> queue;
     private final static long DELAY_MIN = 5000L; //24000L
 
