@@ -1,5 +1,7 @@
 package com.group4.gateway.lorawan;
 
+import com.group4.gateway.utils.EventTypes;
+import com.group4.gateway.utils.JSON;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -34,6 +36,7 @@ public class LoRaWan implements ILoRaWan {
     @Override
     public void sendMessage(String json) {
         server.sendText(json,true);
+
         System.out.println("sendDownLink executed");
     }
 
@@ -42,15 +45,29 @@ public class LoRaWan implements ILoRaWan {
         // This WebSocket will invoke onText, onBinary, onPing, onPong or onClose methods on the associated listener (i.e. receive methods) up to n more times
         webSocket.request(1);
 
+        System.out.println("WebSocket Listener has been opened for requests.");
+        JSONObject json = new JSONObject();
+        try {
+            json.put("cmd", "rx");
+            json.put("EUI", "0004A30B0021B92F");
+            json.put("ts", 1621165894);
+            json.put("ack", false);
+            json.put("port", 2);
+            json.put("fcnt", 1);
+
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
         //keep connection alive
         executorService.scheduleAtFixedRate(() -> {
-                    String data = "Ping";
-                    ByteBuffer payload = ByteBuffer.wrap(data.getBytes());
-                    server.sendPing(payload);
+//                    String data = "Ping";
+//                    ByteBuffer payload = ByteBuffer.wrap(data.getBytes());
+//                    server.sendPing(payload);
+                    sendMessage(json.toString());
+
                 },
                 1, 1, TimeUnit.SECONDS);
-
-        System.out.println("WebSocket Listener has been opened for requests.");
     }
 
     //onError()
@@ -85,7 +102,9 @@ public class LoRaWan implements ILoRaWan {
 
     //onText()
     public CompletionStage<?> onText(WebSocket webSocket, CharSequence data, boolean last) {
+        System.out.println("onText()");
         String indented = null;
+
         try {
             indented = (new JSONObject(data.toString())).toString(4);
         } catch (JSONException e) {
@@ -93,7 +112,9 @@ public class LoRaWan implements ILoRaWan {
             e.printStackTrace();
         }
         System.out.println(indented);
+
         webSocket.request(1);
+
         return new CompletableFuture().completedFuture("onText() completed.").thenAccept(System.out::println);
     }
 
