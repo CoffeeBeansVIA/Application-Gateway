@@ -1,5 +1,6 @@
 package com.group4.gateway;
 
+import com.group4.gateway.lorawan.LoRaWan;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
@@ -9,11 +10,6 @@ public class GatewayApplication {
 //        SpringApplication.run(GatewayApplication.class, args);
 //    }
     public static void main(String[] args) {
-        WebsocketClient websocketClient = new WebsocketClient();
-        websocketClient.sendDownLink("{cmd: 'tx', EUI: '0004A30B0021B92F', port: 1, confirmed: true, data: 'test text'}");
-
-        while (true) {
-
-        }
+        new LoRaWan();
     }
 }
