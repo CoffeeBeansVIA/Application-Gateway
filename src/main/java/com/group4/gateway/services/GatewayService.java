@@ -1,10 +1,8 @@
 package com.group4.gateway.services;
 
-import com.group4.gateway.lorawan.ILoRaWan;
+import com.group4.gateway.repositories.lorawan.ILoRaWan;
 import com.group4.gateway.models.ConfigModel;
-import com.group4.gateway.models.TeracomModel;
 import com.group4.gateway.utils.EventTypes;
-import com.group4.gateway.utils.JSON;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
@@ -16,19 +14,15 @@ import org.json.JSONObject;
 
 import java.beans.PropertyChangeEvent;
 import java.io.IOException;
-import java.io.OutputStream;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
-import java.time.Instant;
 
 public class GatewayService {
     private final ILoRaWan loRaWan;
 
     public GatewayService(ILoRaWan iLoRaWan) {
         loRaWan = iLoRaWan;
+
+        initializeSubscription();
     }
 
     private void initializeSubscription() {
@@ -36,20 +30,10 @@ public class GatewayService {
     }
 
     private void onSensorDataReceivedEvent(PropertyChangeEvent event) {
-        String json = (String) event.getNewValue();
-
-        var model = JSON.toObject(json, TeracomModel.class);
-
-        if (model != null) {
-            // What is model cmd ?
-            if (model.cmd.equals("rx")) {
-                storeMeasurements(model.eUI, model.data, Timestamp.from(Instant.now()));
-            }
-        }
+        // TODO
     }
 
     private void storeMeasurements(String deviceId, String hexString, Timestamp timestamp) {
-        // TODO call the web api and store the retrieved data there
         try {
             String payload = "{\"time\": \"2\", \"date\": \"2\", \"value\": 111, \"sensorId\": 3}";
             StringEntity entity = new StringEntity(payload,

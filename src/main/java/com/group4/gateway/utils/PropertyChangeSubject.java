@@ -1,4 +1,4 @@
-package com.group4.gateway.util;
+package com.group4.gateway.utils;
 
 import java.beans.PropertyChangeListener;
 

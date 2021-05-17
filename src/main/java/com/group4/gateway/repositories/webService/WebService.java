@@ -1,4 +1,4 @@
-package com.group4.gateway.WebService;
+package com.group4.gateway.repositories.webService;
 
 import java.beans.PropertyChangeListener;
 import java.sql.Timestamp;

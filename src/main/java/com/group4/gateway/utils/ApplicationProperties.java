@@ -1,4 +1,4 @@
-package com.group4.gateway.util;
+package com.group4.gateway.utils;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;

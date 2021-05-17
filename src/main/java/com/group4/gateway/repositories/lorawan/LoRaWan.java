@@ -1,9 +1,11 @@
-package com.group4.gateway.lorawan;
+package com.group4.gateway.repositories.lorawan;
 
-import com.group4.gateway.utils.EventTypes;
-import com.group4.gateway.utils.JSON;
+import com.google.gson.Gson;
+import com.group4.gateway.models.MeasurementModel;
+import com.group4.gateway.utils.ApplicationProperties;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
@@ -14,11 +16,14 @@ import java.nio.ByteBuffer;
 import java.util.concurrent.*;
 
 public class LoRaWan implements ILoRaWan {
+    @Autowired
+    private ApplicationProperties applicationProperties;
+    private final Gson g = new Gson();
     private final PropertyChangeSupport support;
     private final ScheduledExecutorService executorService;
-    private WebSocket server = null;
-    private final String URL = "wss://iotnet.cibicom.dk/app?token=vnoTwwAAABFpb3RuZXQuY2liaWNvbS5ka8Jer376b_vS6G62ZSL3pMU=";
-    private final String TOKEN = "0004A30B0021B92F";
+
+    private WebSocket server;
+
 
     public LoRaWan() {
         support = new PropertyChangeSupport(this);
@@ -26,7 +31,7 @@ public class LoRaWan implements ILoRaWan {
 
         HttpClient client = HttpClient.newHttpClient();
         CompletableFuture<WebSocket> ws = client.newWebSocketBuilder()
-                .buildAsync(URI.create(URL), this);
+                .buildAsync(URI.create(applicationProperties.getLoRaWanURL()), this);
 
         server = ws.join();
     }
@@ -64,10 +69,9 @@ public class LoRaWan implements ILoRaWan {
 //                    String data = "Ping";
 //                    ByteBuffer payload = ByteBuffer.wrap(data.getBytes());
 //                    server.sendPing(payload);
-                    sendMessage(json.toString());
-
-                },
-                1, 1, TimeUnit.SECONDS);
+                sendMessage(json.toString());
+            },
+            1, 1, TimeUnit.SECONDS);
     }
 
     //onError()
@@ -107,6 +111,7 @@ public class LoRaWan implements ILoRaWan {
 
         try {
             indented = (new JSONObject(data.toString())).toString(4);
+            MeasurementModel measurementModel = g.fromJson(indented, MeasurementModel.class);
         } catch (JSONException e) {
             System.out.println("onText error");
             e.printStackTrace();

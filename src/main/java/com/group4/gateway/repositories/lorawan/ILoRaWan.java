@@ -1,4 +1,4 @@
-package com.group4.gateway.lorawan;
+package com.group4.gateway.repositories.lorawan;
 
 import java.beans.PropertyChangeListener;
 import java.net.http.WebSocket;
