@@ -3,10 +3,12 @@ package com.group4.gateway.repositories.lorawan;
 import com.google.gson.Gson;
 import com.group4.gateway.models.MeasurementModel;
 import com.group4.gateway.utils.ApplicationProperties;
+import com.group4.gateway.utils.EventTypes;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import javax.annotation.PostConstruct;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.net.URI;
@@ -18,29 +20,45 @@ import java.util.concurrent.*;
 public class LoRaWan implements ILoRaWan {
     @Autowired
     private ApplicationProperties applicationProperties;
+
     private final Gson g = new Gson();
     private final PropertyChangeSupport support;
     private final ScheduledExecutorService executorService;
-
     private WebSocket server;
+    private String data = "";
 
+    @PostConstruct
+    public void init() {
+        new LoRaWan();
+    }
 
     public LoRaWan() {
         support = new PropertyChangeSupport(this);
         executorService = Executors.newScheduledThreadPool(1);
+        createConnection();
+    }
 
+    private void createConnection() {
         HttpClient client = HttpClient.newHttpClient();
         CompletableFuture<WebSocket> ws = client.newWebSocketBuilder()
+                //todo change uri
                 .buildAsync(URI.create(applicationProperties.getLoRaWanURL()), this);
-
         server = ws.join();
+        try {
+            onOpen(ws.get());
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        }
     }
+
 
     // Send down-link message to device
     // Must be in Json format according to https://github.com/ihavn/IoT_Semester_project/blob/master/LORA_NETWORK_SERVER.md
     @Override
     public void sendMessage(String json) {
-        server.sendText(json,true);
+        server.sendText(json, true);
 
         System.out.println("sendDownLink executed");
     }
@@ -69,9 +87,9 @@ public class LoRaWan implements ILoRaWan {
 //                    String data = "Ping";
 //                    ByteBuffer payload = ByteBuffer.wrap(data.getBytes());
 //                    server.sendPing(payload);
-                sendMessage(json.toString());
-            },
-            1, 1, TimeUnit.SECONDS);
+                    sendMessage(json.toString());
+                },
+                1, 1, TimeUnit.SECONDS);
     }
 
     //onError()
@@ -106,21 +124,34 @@ public class LoRaWan implements ILoRaWan {
 
     //onText()
     public CompletionStage<?> onText(WebSocket webSocket, CharSequence data, boolean last) {
-        System.out.println("onText()");
-        String indented = null;
-
         try {
-            indented = (new JSONObject(data.toString())).toString(4);
-            MeasurementModel measurementModel = g.fromJson(indented, MeasurementModel.class);
+             this.data +=  (new JSONObject(data.toString())).toString(4);
         } catch (JSONException e) {
-            System.out.println("onText error");
             e.printStackTrace();
         }
-        System.out.println(indented);
-
+        // As sequence received can be send on multiple occasions, method collects until boolean last is true, then proceeds with the data.
+        if (last) {
+            support.firePropertyChange(EventTypes.RECEIVE_LORA_DATA.toString(), "", this.data);
+            this.data = "";
+        }
         webSocket.request(1);
 
-        return new CompletableFuture().completedFuture("onText() completed.").thenAccept(System.out::println);
+        return CompletableFuture.completedFuture("onText() completed.");
+
+//        System.out.println("onText()");
+//        String indented = null;
+//
+//        try {
+//            indented = (new JSONObject(data.toString())).toString(4);
+//            MeasurementModel measurementModel = g.fromJson(indented, MeasurementModel.class);
+//        } catch (JSONException e) {
+//            System.out.println("onText error");
+//            e.printStackTrace();
+//        }
+//        System.out.println(indented);
+//
+//        webSocket.request(1);
+        // return new CompletableFuture().completedFuture("onText() completed.").thenAccept(System.out::println);
     }
 
     @Override
