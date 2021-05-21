@@ -44,13 +44,7 @@ public class LoRaWan implements ILoRaWan {
                 //todo change uri
                 .buildAsync(URI.create(applicationProperties.getLoRaWanURL()), this);
         server = ws.join();
-        try {
-            onOpen(ws.get());
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (ExecutionException e) {
-            e.printStackTrace();
-        }
+
     }
 
 
@@ -137,7 +131,7 @@ public class LoRaWan implements ILoRaWan {
         webSocket.request(1);
 
         return CompletableFuture.completedFuture("onText() completed.");
-
+//
 //        System.out.println("onText()");
 //        String indented = null;
 //
@@ -151,7 +145,7 @@ public class LoRaWan implements ILoRaWan {
 //        System.out.println(indented);
 //
 //        webSocket.request(1);
-        // return new CompletableFuture().completedFuture("onText() completed.").thenAccept(System.out::println);
+//         return new CompletableFuture().completedFuture("onText() completed.").thenAccept(System.out::println);
     }
 
     @Override

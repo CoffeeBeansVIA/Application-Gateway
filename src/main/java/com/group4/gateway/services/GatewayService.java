@@ -1,5 +1,7 @@
 package com.group4.gateway.services;
 
+import com.google.gson.Gson;
+import com.group4.gateway.models.MeasurementModel;
 import com.group4.gateway.repositories.lorawan.ILoRaWan;
 import com.group4.gateway.models.ConfigModel;
 import com.group4.gateway.utils.EventTypes;
@@ -11,20 +13,29 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.springframework.http.*;
+import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import javax.annotation.PostConstruct;
 import java.beans.PropertyChangeEvent;
 import java.io.IOException;
 import java.sql.Timestamp;
 
 public class GatewayService {
-    private final ILoRaWan loRaWan;
-    RestTemplate restTemplate=new RestTemplate();
+    private ILoRaWan loRaWan;
+    RestTemplate restTemplate = new RestTemplate();
+    Gson gson = new Gson();
+
+    public GatewayService() {
+        storeMeasurements(new MeasurementModel());
+    }
 
     public GatewayService(ILoRaWan iLoRaWan) {
         loRaWan = iLoRaWan;
 
         initializeListeners();
+
     }
 
     private void initializeListeners() {
@@ -33,13 +44,21 @@ public class GatewayService {
 
     private void onSensorDataReceivedEvent(PropertyChangeEvent event) {
         // TODO
+        MeasurementModel measurementModel = null;
+
+        try {
+            measurementModel = gson.fromJson(event.getNewValue().toString(), MeasurementModel.class);
+            storeMeasurements(measurementModel);
+        } catch (Exception e) {
+
+        }
+
     }
 
-    private void storeMeasurements(String deviceId, String hexString, Timestamp timestamp) {
+    private void storeMeasurements(MeasurementModel measurementModel) {
         try {
-
-            String payload = "{\"time\": \"2\", \"date\": \"2\", \"value\": 111, \"sensorId\": 3}";
-            StringEntity entity = new StringEntity(payload,
+          var measurementModelString=gson.toJson(measurementModel);
+            StringEntity entity = new StringEntity(measurementModelString,
                     ContentType.APPLICATION_JSON);
 
             HttpClient httpClient = HttpClientBuilder.create().build();
@@ -48,7 +67,6 @@ public class GatewayService {
 
             HttpResponse response = httpClient.execute(request);
             System.out.println(response.getStatusLine().getStatusCode());
-            //restTemplate.postForEntity("http://localhost:5000/api/sensors/3/measurements",payload);
 
         } catch (IOException e) {
             e.printStackTrace();
