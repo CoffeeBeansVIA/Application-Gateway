@@ -9,6 +9,12 @@ public class ApplicationProperties {
     private String LoRaWanURL;
     @Value("${lorawan.TOKEN}")
     private String LoRaWanToken;
+    @Value("${WebAPI.URL}")
+    private String WebApiURL;
+
+    public String getWebApiURL() {
+        return WebApiURL;
+    }
 
     public String getLoRaWanURL() {
         return LoRaWanURL;

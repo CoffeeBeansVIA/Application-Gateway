@@ -5,9 +5,11 @@ import com.group4.gateway.models.MeasurementModel;
 import com.group4.gateway.models.MeasurementToStore;
 import com.group4.gateway.repositories.lorawan.ILoRaWan;
 import com.group4.gateway.models.ConfigModel;
+import com.group4.gateway.utils.ApplicationProperties;
 import com.group4.gateway.utils.EventTypes;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
@@ -28,9 +30,10 @@ import java.util.Date;
 
 @Component
 public class GatewayService {
+    @Autowired
+    private ApplicationProperties applicationProperties;
     private ILoRaWan loRaWan;
-    RestTemplate restTemplate = new RestTemplate();
-    Gson gson = new Gson();
+    private Gson gson = new Gson();
 
     @Autowired
     public GatewayService(@Qualifier("LoRaWanImpl") ILoRaWan iLoRaWan) {
@@ -45,12 +48,10 @@ public class GatewayService {
     }
 
     private void onSensorDataReceivedEvent(PropertyChangeEvent event) {
-        // TODO
         MeasurementModel measurementModel = null;
 
         try {
             measurementModel = gson.fromJson(event.getNewValue().toString(), MeasurementModel.class);
-
             convertMeasurement(measurementModel);
         } catch (Exception e) {
             e.printStackTrace();
@@ -64,9 +65,9 @@ public class GatewayService {
         var dateAndTime = parseUNIXTimestampToDateAndTime(measurementModel.ts);
         double value = Integer.parseInt(measurementModel.data, 16);
 
-        measurementToStore.time=dateAndTime[1];
-        measurementToStore.date=dateAndTime[0];
-        measurementToStore.value=value;
+        measurementToStore.time = dateAndTime[1];
+        measurementToStore.date = dateAndTime[0];
+        measurementToStore.value = value;
         measurementToStore.sensorId = senorId;
 
         storeMeasurements(measurementToStore);
@@ -102,6 +103,7 @@ public class GatewayService {
      * 3 = C1 (CO2)
      */
     private int parseMeasurementSensorId(String data) {
+
         if (data.length() <= 4) {
             return 3;
         }
@@ -115,7 +117,7 @@ public class GatewayService {
                     ContentType.APPLICATION_JSON);
 
             HttpClient httpClient = HttpClientBuilder.create().build();
-            HttpPost request = new HttpPost("http://localhost:5000/api/sensors/3/measurements");
+            HttpPost request = new HttpPost(applicationProperties.getWebApiURL() + "api/sensors/" + measurementModel.sensorId + "/measurements");
             request.setEntity(entity);
 
             HttpResponse response = httpClient.execute(request);
@@ -127,6 +129,8 @@ public class GatewayService {
     }
 
     private void configurationReceivedEvent(ConfigModel configModel) {
+        requestConfigurations();
+
 
         String hex = String.format("%04X", configModel.tempSetpoint) +
                 String.format("%04X", configModel.co2Min) +
@@ -143,5 +147,19 @@ public class GatewayService {
         }
 
         loRaWan.sendMessage(jsonObject.toString());
+    }
+
+    private void requestConfigurations() {
+        try {
+            HttpClient httpClient = HttpClientBuilder.create().build();
+            HttpGet request = new HttpGet(applicationProperties.getWebApiURL() + "api/sensors/1");
+
+            HttpResponse response = null;
+            response = httpClient.execute(request);
+            System.out.println("WEB API "+ response.getStatusLine().getStatusCode());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
     }
 }
