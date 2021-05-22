@@ -1,14 +1,14 @@
 package com.group4.gateway.repositories.lorawan;
 
 import com.google.gson.Gson;
-import com.group4.gateway.models.MeasurementModel;
 import com.group4.gateway.utils.ApplicationProperties;
 import com.group4.gateway.utils.EventTypes;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.net.URI;
@@ -16,33 +16,35 @@ import java.net.http.HttpClient;
 import java.net.http.WebSocket;
 import java.nio.ByteBuffer;
 import java.util.concurrent.*;
-
-public class LoRaWan implements ILoRaWan {
+@Component
+@Qualifier("LoRaWanImpl")
+public class LoRaWanImpl implements ILoRaWan {
     @Autowired
     private ApplicationProperties applicationProperties;
 
-    private final Gson g = new Gson();
-    private final PropertyChangeSupport support;
-    private final ScheduledExecutorService executorService;
+    private  Gson gson;
+    private  PropertyChangeSupport support;
+    private  ScheduledExecutorService executorService;
     private WebSocket server;
     private String data = "";
 
-    @PostConstruct
-    public void init() {
-        new LoRaWan();
-    }
 
-    public LoRaWan() {
+    public LoRaWanImpl() {
+        gson =new Gson();
         support = new PropertyChangeSupport(this);
         executorService = Executors.newScheduledThreadPool(1);
-        createConnection();
+
+
+    }
+    public void init(){
+       createConnection();
     }
 
     private void createConnection() {
         HttpClient client = HttpClient.newHttpClient();
         CompletableFuture<WebSocket> ws = client.newWebSocketBuilder()
                 //todo change uri
-                .buildAsync(URI.create(applicationProperties.getLoRaWanURL()), this);
+                .buildAsync(URI.create(applicationProperties.getLoRaWanURL()),this);
         server = ws.join();
 
     }
@@ -78,10 +80,10 @@ public class LoRaWan implements ILoRaWan {
 
         //keep connection alive
         executorService.scheduleAtFixedRate(() -> {
-//                    String data = "Ping";
-//                    ByteBuffer payload = ByteBuffer.wrap(data.getBytes());
-//                    server.sendPing(payload);
-                    sendMessage(json.toString());
+                    String data = "Ping";
+                    ByteBuffer payload = ByteBuffer.wrap(data.getBytes());
+                    server.sendPing(payload);
+            //       sendMessage(json.toString());
                 },
                 1, 1, TimeUnit.SECONDS);
     }
@@ -120,6 +122,7 @@ public class LoRaWan implements ILoRaWan {
     public CompletionStage<?> onText(WebSocket webSocket, CharSequence data, boolean last) {
         try {
              this.data +=  (new JSONObject(data.toString())).toString(4);
+            System.out.println("TAG "+data);
         } catch (JSONException e) {
             e.printStackTrace();
         }

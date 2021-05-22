@@ -13,31 +13,29 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.springframework.http.*;
-import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
 import javax.annotation.PostConstruct;
 import java.beans.PropertyChangeEvent;
 import java.io.IOException;
-import java.sql.Timestamp;
 
+@Component
 public class GatewayService {
     private ILoRaWan loRaWan;
     RestTemplate restTemplate = new RestTemplate();
     Gson gson = new Gson();
 
-    public GatewayService() {
-        storeMeasurements(new MeasurementModel());
-    }
-
-    public GatewayService(ILoRaWan iLoRaWan) {
+    @Autowired
+    public GatewayService(@Qualifier("LoRaWanImpl") ILoRaWan iLoRaWan) {
         loRaWan = iLoRaWan;
 
-        initializeListeners();
 
     }
 
+@PostConstruct
     private void initializeListeners() {
         loRaWan.addPropertyChangeListener(EventTypes.RECEIVE_LORA_DATA.toString(), this::onSensorDataReceivedEvent);
     }
@@ -57,7 +55,7 @@ public class GatewayService {
 
     private void storeMeasurements(MeasurementModel measurementModel) {
         try {
-          var measurementModelString=gson.toJson(measurementModel);
+            var measurementModelString = gson.toJson(measurementModel);
             StringEntity entity = new StringEntity(measurementModelString,
                     ContentType.APPLICATION_JSON);
 
