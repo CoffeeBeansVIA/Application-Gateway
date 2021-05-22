@@ -2,6 +2,7 @@ package com.group4.gateway.services;
 
 import com.google.gson.Gson;
 import com.group4.gateway.models.MeasurementModel;
+import com.group4.gateway.models.MeasurementToStore;
 import com.group4.gateway.repositories.lorawan.ILoRaWan;
 import com.group4.gateway.models.ConfigModel;
 import com.group4.gateway.utils.EventTypes;
@@ -21,6 +22,9 @@ import org.springframework.web.client.RestTemplate;
 import javax.annotation.PostConstruct;
 import java.beans.PropertyChangeEvent;
 import java.io.IOException;
+import java.lang.reflect.Array;
+import java.util.Calendar;
+import java.util.Date;
 
 @Component
 public class GatewayService {
@@ -35,7 +39,7 @@ public class GatewayService {
 
     }
 
-@PostConstruct
+    @PostConstruct
     private void initializeListeners() {
         loRaWan.addPropertyChangeListener(EventTypes.RECEIVE_LORA_DATA.toString(), this::onSensorDataReceivedEvent);
     }
@@ -46,14 +50,65 @@ public class GatewayService {
 
         try {
             measurementModel = gson.fromJson(event.getNewValue().toString(), MeasurementModel.class);
-            storeMeasurements(measurementModel);
-        } catch (Exception e) {
 
+            convertMeasurement(measurementModel);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
 
     }
 
-    private void storeMeasurements(MeasurementModel measurementModel) {
+    private void convertMeasurement(MeasurementModel measurementModel) {
+        MeasurementToStore measurementToStore = new MeasurementToStore();
+        var senorId = parseMeasurementSensorId(measurementModel.data);
+        var dateAndTime = parseUNIXTimestampToDateAndTime(measurementModel.ts);
+        double value = Integer.parseInt(measurementModel.data, 16);
+
+        measurementToStore.time=dateAndTime[1];
+        measurementToStore.date=dateAndTime[0];
+        measurementToStore.value=value;
+        measurementToStore.sensorId = senorId;
+
+        storeMeasurements(measurementToStore);
+    }
+
+    /**
+     * Parse UNIX Timestamp to date(DD/MM/YYYY) and time(HH:MM:SS)
+     *
+     * @param ts timestamp
+     * @return String array
+     * pos[0] = date
+     * pos[1] = time
+     */
+    private String[] parseUNIXTimestampToDateAndTime(Long ts) {
+        var dateAndTime = new String[2];
+        Date tempDate = new Date(ts);
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(tempDate);
+        String date = calendar.get(Calendar.DATE) + "/" + calendar.get(Calendar.MONTH) + "/" + calendar.get(Calendar.YEAR);
+        String time = calendar.get(Calendar.HOUR) + ":" + calendar.get(Calendar.MINUTE) + ":" + calendar.get(Calendar.SECOND);
+        dateAndTime[0] = date;
+        dateAndTime[1] = time;
+        return dateAndTime;
+    }
+
+    /**
+     * Parse the {@data} parameter to the sensor id
+     *
+     * @param data measurment data
+     * @return sensor id
+     * 1 = T1 (Temperature)
+     * 2 = H1 (Humidity)
+     * 3 = C1 (CO2)
+     */
+    private int parseMeasurementSensorId(String data) {
+        if (data.length() <= 4) {
+            return 3;
+        }
+        return -1;
+    }
+
+    private void storeMeasurements(MeasurementToStore measurementModel) {
         try {
             var measurementModelString = gson.toJson(measurementModel);
             StringEntity entity = new StringEntity(measurementModelString,
