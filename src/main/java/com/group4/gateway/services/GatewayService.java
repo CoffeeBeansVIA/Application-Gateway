@@ -3,6 +3,7 @@ package com.group4.gateway.services;
 import com.google.gson.Gson;
 import com.group4.gateway.models.MeasurementModel;
 import com.group4.gateway.models.MeasurementToStore;
+import com.group4.gateway.models.SensorSettingsModel;
 import com.group4.gateway.repositories.lorawan.ILoRaWan;
 import com.group4.gateway.models.ConfigModel;
 import com.group4.gateway.utils.ApplicationProperties;
@@ -14,6 +15,7 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.util.EntityUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,6 +27,7 @@ import javax.annotation.PostConstruct;
 import java.beans.PropertyChangeEvent;
 import java.io.IOException;
 import java.lang.reflect.Array;
+import java.math.BigInteger;
 import java.util.Calendar;
 import java.util.Date;
 
@@ -45,6 +48,7 @@ public class GatewayService {
     @PostConstruct
     private void initializeListeners() {
         loRaWan.addPropertyChangeListener(EventTypes.RECEIVE_LORA_DATA.toString(), this::onSensorDataReceivedEvent);
+        receiveConfiguration();
     }
 
     private void onSensorDataReceivedEvent(PropertyChangeEvent event) {
@@ -128,18 +132,26 @@ public class GatewayService {
         }
     }
 
-    private void configurationReceivedEvent(ConfigModel configModel) {
-        requestConfigurations();
+    private void receiveConfiguration() {
+        var fetchedSettings = requestConfigurations();
+        if (fetchedSettings == null) {
+            return;
+        }
+        //todo DAN
+        if(fetchedSettings.desiredValue==0&&fetchedSettings.deviationValue==0){
 
+        }
+        long desiredValue = new BigInteger(String.valueOf(fetchedSettings.desiredValue), 16).longValue();
+        long deviationValue = new BigInteger(String.valueOf(fetchedSettings.deviationValue), 16).longValue();
 
-        String hex = String.format("%04X", configModel.tempSetpoint) +
-                String.format("%04X", configModel.co2Min) +
-                String.format("%04X", configModel.co2Max);
+        String hex = String.format("%04X", desiredValue) +
+                String.format("%04X", deviationValue);
 
         JSONObject jsonObject = new JSONObject();
         try {
             jsonObject.put("cmd", "tx");
-            jsonObject.put("EUI", configModel.eui);
+            //todo storer EUI to database
+            jsonObject.put("EUI", applicationProperties.getEUI());
             jsonObject.put("port", 2);
             jsonObject.put("data", hex);
         } catch (JSONException e) {
@@ -149,17 +161,24 @@ public class GatewayService {
         loRaWan.sendMessage(jsonObject.toString());
     }
 
-    private void requestConfigurations() {
+    private SensorSettingsModel requestConfigurations() {
+        SensorSettingsModel fetchedSettings = null;
         try {
-            HttpClient httpClient = HttpClientBuilder.create().build();
-            HttpGet request = new HttpGet(applicationProperties.getWebApiURL() + "api/sensors/1");
 
+            HttpClient httpClient = HttpClientBuilder.create().build();
+            HttpGet request = new HttpGet(applicationProperties.getWebApiURL() + "api/sensors/1/settings");
             HttpResponse response = null;
             response = httpClient.execute(request);
-            System.out.println("WEB API "+ response.getStatusLine().getStatusCode());
+            if (response.getStatusLine().getStatusCode() == 204) {
+                return fetchedSettings = new SensorSettingsModel(0, 0);
+            }
+            String responseBody = EntityUtils.toString(response.getEntity());
+
+            fetchedSettings = gson.fromJson(responseBody, SensorSettingsModel.class);
+            System.out.println("WEB API " + response.getStatusLine().getStatusCode());
         } catch (IOException e) {
             e.printStackTrace();
         }
-
+        return fetchedSettings;
     }
 }

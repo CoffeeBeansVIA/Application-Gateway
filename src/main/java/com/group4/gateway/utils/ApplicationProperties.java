@@ -7,8 +7,8 @@ import org.springframework.context.annotation.Configuration;
 public class ApplicationProperties {
     @Value("${lorawan.URL}")
     private String LoRaWanURL;
-    @Value("${lorawan.TOKEN}")
-    private String LoRaWanToken;
+    @Value("${lorawan.EUI}")
+    private String EUI;
     @Value("${WebAPI.URL}")
     private String WebApiURL;
 
@@ -20,7 +20,7 @@ public class ApplicationProperties {
         return LoRaWanURL;
     }
 
-    public String getLoRaWanToken() {
-        return LoRaWanToken;
+    public String getEUI() {
+        return EUI;
     }
 }
