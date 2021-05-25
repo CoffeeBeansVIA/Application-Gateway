@@ -46,7 +46,6 @@ public class LoRaWanImpl implements ILoRaWan {
                 //todo change uri
                 .buildAsync(URI.create(applicationProperties.getLoRaWanURL()),this);
         server = ws.join();
-
     }
 
 
@@ -120,7 +119,7 @@ public class LoRaWanImpl implements ILoRaWan {
     public CompletionStage<?> onText(WebSocket webSocket, CharSequence data, boolean last) {
         try {
              this.data +=  (new JSONObject(data.toString())).toString(4);
-            System.out.println("TAG "+data);
+            System.out.println("Data Received "+data);
         } catch (JSONException e) {
             e.printStackTrace();
         }

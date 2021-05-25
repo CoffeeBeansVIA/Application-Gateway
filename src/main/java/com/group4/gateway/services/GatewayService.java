@@ -68,7 +68,7 @@ public class GatewayService {
 
     private void convertMeasurement(MeasurementModel measurementModel) {
         MeasurementToStore measurementToStore = new MeasurementToStore();
-        var senorId = parseMeasurementSensorId(measurementModel.data);
+        var senorId = parseMeasurementSensorId(measurementModel.port, measurementModel.data);
         var dateAndTime = parseUNIXTimestampToDateAndTime(measurementModel.ts);
         double value = Integer.parseInt(measurementModel.data, 16);
 
@@ -89,14 +89,14 @@ public class GatewayService {
      * pos[1] = time
      */
     private String[] parseUNIXTimestampToDateAndTime(Long ts) {
-        if(ts==null){
-            ts=Calendar.getInstance().getTimeInMillis();
+        if (ts == null) {
+            ts = Calendar.getInstance().getTimeInMillis();
         }
         var dateAndTime = new String[2];
         Date tempDate = new Date(ts);
         Calendar calendar = Calendar.getInstance();
         calendar.setTime(tempDate);
-        String date = calendar.get(Calendar.DATE) + "/" + calendar.get(Calendar.MONTH)+1 + "/" + calendar.get(Calendar.YEAR);
+        String date = calendar.get(Calendar.DATE) + "/" + calendar.get(Calendar.MONTH) + 1 + "/" + calendar.get(Calendar.YEAR);
         String time = calendar.get(Calendar.HOUR) + ":" + calendar.get(Calendar.MINUTE) + ":" + calendar.get(Calendar.SECOND);
         dateAndTime[0] = date;
         dateAndTime[1] = time;
@@ -104,18 +104,20 @@ public class GatewayService {
     }
 
     /**
-     * Parse the {@data} parameter to the sensor id
+     * Parse the {@data} parameter to the sensor id only if port number==2
      *
-     * @param data measurment data
+     * @param port uplink messages must come on port 2
+     * @param data measurement data
      * @return sensor id
      * 1 = T1 (Temperature)
      * 2 = H1 (Humidity)
      * 3 = C1 (CO2)
      */
-    private int parseMeasurementSensorId(String data) {
-
-        if (data.length() <= 4) {
-            return 3;
+    private int parseMeasurementSensorId(Integer port, String data) {
+        if (port != null && port == 2) {
+            if (data.length() <= 4) {
+                return 3;
+            }
         }
         return -1;
     }
@@ -131,7 +133,7 @@ public class GatewayService {
             request.setEntity(entity);
 
             HttpResponse response = httpClient.execute(request);
-            System.out.println(response.getStatusLine().getStatusCode());
+            System.out.println("Store Measurements " + response.getStatusLine().getStatusCode());
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -144,18 +146,18 @@ public class GatewayService {
             return;
         }
         //todo DAN
-        if(fetchedSettings.desiredValue==0&&fetchedSettings.deviationValue==0){
+        if (fetchedSettings.desiredValue == 0 && fetchedSettings.deviationValue == 0) {
         }
 
-        String hex = String.format("%04X", (int)fetchedSettings.desiredValue) +
-                String.format("%04X", (int)fetchedSettings.deviationValue);
+        String hex = String.format("%04X", (int) fetchedSettings.desiredValue) +
+                String.format("%04X", (int) fetchedSettings.deviationValue);
 
         JSONObject jsonObject = new JSONObject();
         try {
             jsonObject.put("cmd", "tx");
             jsonObject.put("EUI", applicationProperties.getEUI());
-            jsonObject.put("port", 2);
-            jsonObject.put("data",hex);
+            jsonObject.put("port", 3);
+            jsonObject.put("data", hex);
         } catch (JSONException e) {
             e.printStackTrace();
         }
