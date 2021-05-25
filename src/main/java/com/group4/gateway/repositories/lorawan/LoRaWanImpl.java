@@ -69,10 +69,8 @@ public class LoRaWanImpl implements ILoRaWan {
         try {
             json.put("cmd", "rx");
             json.put("EUI", "0004A30B0021B92F");
-            json.put("ts", 1621165894);
-            json.put("ack", false);
             json.put("port", 2);
-            json.put("fcnt", 1);
+            json.put("data", "0ba2");
 
         } catch (JSONException e) {
             e.printStackTrace();
@@ -83,7 +81,7 @@ public class LoRaWanImpl implements ILoRaWan {
                     String data = "Ping";
                     ByteBuffer payload = ByteBuffer.wrap(data.getBytes());
                     server.sendPing(payload);
-            //       sendMessage(json.toString());
+                //   sendMessage(json.toString());
                 },
                 1, 1, TimeUnit.SECONDS);
     }
@@ -105,16 +103,16 @@ public class LoRaWanImpl implements ILoRaWan {
     //onPing()
     public CompletionStage<?> onPing(WebSocket webSocket, ByteBuffer message) {
         webSocket.request(1);
-        System.out.println("Ping: Client ---> Server");
-        System.out.println(message.asCharBuffer().toString());
+//        System.out.println("Ping: Client ---> Server");
+//        System.out.println(message.asCharBuffer().toString());
         return new CompletableFuture().completedFuture("Ping completed.").thenAccept(System.out::println);
     }
 
     //onPong()
     public CompletionStage<?> onPong(WebSocket webSocket, ByteBuffer message) {
         webSocket.request(1);
-        System.out.println("Pong: Client ---> Server");
-        System.out.println(message.asCharBuffer().toString());
+//        System.out.println("Pong: Client ---> Server");
+//        System.out.println(message.asCharBuffer().toString());
         return new CompletableFuture().completedFuture("Pong completed.").thenAccept(System.out::println);
     }
 

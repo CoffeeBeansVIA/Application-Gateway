@@ -48,7 +48,10 @@ public class GatewayService {
     @PostConstruct
     private void initializeListeners() {
         loRaWan.addPropertyChangeListener(EventTypes.RECEIVE_LORA_DATA.toString(), this::onSensorDataReceivedEvent);
-        receiveConfiguration();
+        for (int i = 0; i < 5; i++) {
+            receiveConfiguration();
+        }
+
     }
 
     private void onSensorDataReceivedEvent(PropertyChangeEvent event) {
@@ -86,11 +89,14 @@ public class GatewayService {
      * pos[1] = time
      */
     private String[] parseUNIXTimestampToDateAndTime(Long ts) {
+        if(ts==null){
+            ts=Calendar.getInstance().getTimeInMillis();
+        }
         var dateAndTime = new String[2];
         Date tempDate = new Date(ts);
         Calendar calendar = Calendar.getInstance();
         calendar.setTime(tempDate);
-        String date = calendar.get(Calendar.DATE) + "/" + calendar.get(Calendar.MONTH) + "/" + calendar.get(Calendar.YEAR);
+        String date = calendar.get(Calendar.DATE) + "/" + calendar.get(Calendar.MONTH)+1 + "/" + calendar.get(Calendar.YEAR);
         String time = calendar.get(Calendar.HOUR) + ":" + calendar.get(Calendar.MINUTE) + ":" + calendar.get(Calendar.SECOND);
         dateAndTime[0] = date;
         dateAndTime[1] = time;
@@ -139,25 +145,21 @@ public class GatewayService {
         }
         //todo DAN
         if(fetchedSettings.desiredValue==0&&fetchedSettings.deviationValue==0){
-
         }
-        long desiredValue = new BigInteger(String.valueOf(fetchedSettings.desiredValue), 16).longValue();
-        long deviationValue = new BigInteger(String.valueOf(fetchedSettings.deviationValue), 16).longValue();
 
-        String hex = String.format("%04X", desiredValue) +
-                String.format("%04X", deviationValue);
+        String hex = String.format("%04X", (int)fetchedSettings.desiredValue) +
+                String.format("%04X", (int)fetchedSettings.deviationValue);
 
         JSONObject jsonObject = new JSONObject();
         try {
             jsonObject.put("cmd", "tx");
-            //todo storer EUI to database
             jsonObject.put("EUI", applicationProperties.getEUI());
             jsonObject.put("port", 2);
-            jsonObject.put("data", hex);
+            jsonObject.put("data",hex);
         } catch (JSONException e) {
             e.printStackTrace();
         }
-
+        System.out.println(hex);
         loRaWan.sendMessage(jsonObject.toString());
     }
 
@@ -170,7 +172,7 @@ public class GatewayService {
             HttpResponse response = null;
             response = httpClient.execute(request);
             if (response.getStatusLine().getStatusCode() == 204) {
-                return fetchedSettings = new SensorSettingsModel(0, 0);
+                return new SensorSettingsModel(0, 0);
             }
             String responseBody = EntityUtils.toString(response.getEntity());
 
