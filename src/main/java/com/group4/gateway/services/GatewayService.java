@@ -118,8 +118,10 @@ public class GatewayService {
             if (data.length() <= 4) {
                 return 3;
             }
-        }
-        return -1;
+        } if(port != null &&port==3){
+            receiveConfiguration();
+
+        }        return -1;
     }
 
     private void storeMeasurements(MeasurementToStore measurementModel) {
