@@ -1,6 +1,5 @@
 package com.group4.gateway.models;
 
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.gson.annotations.SerializedName;
 
 public class SensorSettingsModel {
