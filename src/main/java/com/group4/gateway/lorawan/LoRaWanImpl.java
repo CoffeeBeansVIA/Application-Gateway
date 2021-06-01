@@ -1,4 +1,4 @@
-package com.group4.gateway.repositories.lorawan;
+package com.group4.gateway.lorawan;
 
 import com.google.gson.Gson;
 import com.group4.gateway.utils.ApplicationProperties;

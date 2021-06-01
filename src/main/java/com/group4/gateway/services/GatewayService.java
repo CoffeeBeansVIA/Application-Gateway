@@ -4,8 +4,7 @@ import com.google.gson.Gson;
 import com.group4.gateway.models.MeasurementModel;
 import com.group4.gateway.models.MeasurementToStore;
 import com.group4.gateway.models.SensorSettingsModel;
-import com.group4.gateway.repositories.lorawan.ILoRaWan;
-import com.group4.gateway.models.ConfigModel;
+import com.group4.gateway.lorawan.ILoRaWan;
 import com.group4.gateway.utils.ApplicationProperties;
 import com.group4.gateway.utils.EventTypes;
 import org.apache.http.HttpResponse;
@@ -21,13 +20,10 @@ import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.RestTemplate;
 
 import javax.annotation.PostConstruct;
 import java.beans.PropertyChangeEvent;
 import java.io.IOException;
-import java.lang.reflect.Array;
-import java.math.BigInteger;
 import java.util.Calendar;
 import java.util.Date;
 

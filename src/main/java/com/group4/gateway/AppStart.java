@@ -1,6 +1,6 @@
 package com.group4.gateway;
 
-import com.group4.gateway.repositories.lorawan.LoRaWanImpl;
+import com.group4.gateway.lorawan.LoRaWanImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 

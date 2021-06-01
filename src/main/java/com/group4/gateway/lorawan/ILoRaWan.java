@@ -1,4 +1,4 @@
-package com.group4.gateway.repositories.lorawan;
+package com.group4.gateway.lorawan;
 
 import org.springframework.stereotype.Component;
 
