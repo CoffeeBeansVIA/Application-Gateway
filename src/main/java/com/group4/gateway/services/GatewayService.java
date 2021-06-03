@@ -24,6 +24,10 @@ import org.springframework.stereotype.Component;
 import javax.annotation.PostConstruct;
 import java.beans.PropertyChangeEvent;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Calendar;
 import java.util.Date;
 
@@ -55,7 +59,10 @@ public class GatewayService {
 
         try {
             measurementModel = gson.fromJson(event.getNewValue().toString(), MeasurementModel.class);
-            convertMeasurement(measurementModel);
+            if(measurementModel.port!=null&&measurementModel.port==2){
+                convertMeasurement(measurementModel);
+            }
+
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -63,17 +70,24 @@ public class GatewayService {
     }
 
     private void convertMeasurement(MeasurementModel measurementModel) {
-        MeasurementToStore measurementToStore = new MeasurementToStore();
-        var senorId = parseMeasurementSensorId(measurementModel.port, measurementModel.data);
-        var dateAndTime = parseUNIXTimestampToDateAndTime(measurementModel.ts);
-        double value = Integer.parseInt(measurementModel.data, 16);
 
-        measurementToStore.time = dateAndTime[1];
-        measurementToStore.date = dateAndTime[0];
-        measurementToStore.value = value;
-        measurementToStore.sensorId = senorId;
+
+            MeasurementToStore measurementToStore = new MeasurementToStore();
+            var senorId = parseMeasurementSensorId(measurementModel.port, measurementModel.data);
+            double value = Integer.parseInt(measurementModel.data, 16);
+       //    var s= new Date(measurementModel.ts);
+
+            measurementToStore.dateTime=
+            Instant.ofEpochMilli(measurementModel.ts)
+                .atZone(ZoneId.systemDefault())
+                .toLocalDateTime().toString();
+
+            measurementToStore.value = (int)value;
+            measurementToStore.sensorId = senorId;
 
         storeMeasurements(measurementToStore);
+
+
     }
 
     /**
@@ -127,7 +141,7 @@ public class GatewayService {
                     ContentType.APPLICATION_JSON);
 
             HttpClient httpClient = HttpClientBuilder.create().build();
-            HttpPost request = new HttpPost(applicationProperties.getWebApiURL() + "api/sensors/" + measurementModel.sensorId + "/measurements");
+            HttpPost request = new HttpPost(applicationProperties.getWebApiURL() + "api/farms/1/sensors/" + measurementModel.sensorId + "/measurements");
             request.setEntity(entity);
 
             HttpResponse response = httpClient.execute(request);
@@ -168,7 +182,7 @@ public class GatewayService {
         try {
 
             HttpClient httpClient = HttpClientBuilder.create().build();
-            HttpGet request = new HttpGet(applicationProperties.getWebApiURL() + "api/sensors/1/settings");
+            HttpGet request = new HttpGet(applicationProperties.getWebApiURL() + "api/farms/1/sensors/1/settings");
             HttpResponse response = null;
             response = httpClient.execute(request);
             if (response.getStatusLine().getStatusCode() == 204) {
