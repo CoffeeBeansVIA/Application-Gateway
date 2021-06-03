@@ -48,9 +48,9 @@ public class GatewayService {
     @PostConstruct
     private void initializeListeners() {
         loRaWan.addPropertyChangeListener(EventTypes.RECEIVE_LORA_DATA.toString(), this::onSensorDataReceivedEvent);
-        for (int i = 0; i < 5; i++) {
-            receiveConfiguration();
-        }
+//        for (int i = 0; i < 5; i++) {
+//            receiveConfiguration();
+//        }
 
     }
 
@@ -59,8 +59,14 @@ public class GatewayService {
 
         try {
             measurementModel = gson.fromJson(event.getNewValue().toString(), MeasurementModel.class);
-            if(measurementModel.port!=null&&measurementModel.port==2){
-                convertMeasurement(measurementModel);
+
+            if (measurementModel.port != null) {
+                if (measurementModel.port == 2)
+                    convertMeasurement(measurementModel);
+                else if (measurementModel.port == 3) {
+                    System.out.println("we are here!!!");
+                    receiveConfiguration();
+                }
             }
 
         } catch (Exception e) {
@@ -70,15 +76,12 @@ public class GatewayService {
     }
 
     private void convertMeasurement(MeasurementModel measurementModel) {
-
-
             MeasurementToStore measurementToStore = new MeasurementToStore();
             var senorId = parseMeasurementSensorId(measurementModel.port, measurementModel.data);
             double value = Integer.parseInt(measurementModel.data, 16);
        //    var s= new Date(measurementModel.ts);
 
-            measurementToStore.dateTime=
-            Instant.ofEpochMilli(measurementModel.ts)
+            measurementToStore.dateTime = Instant.ofEpochMilli(measurementModel.ts)
                 .atZone(ZoneId.systemDefault())
                 .toLocalDateTime().toString();
 
@@ -161,8 +164,12 @@ public class GatewayService {
         if (fetchedSettings.desiredValue == 0 && fetchedSettings.deviationValue == 0) {
         }
 
-        String hex = String.format("%04X", (int) fetchedSettings.desiredValue) +
-                String.format("%04X", (int) fetchedSettings.deviationValue);
+        System.out.println("fetchedSettings.desiredValue -> " + fetchedSettings.desiredValue);
+        System.out.println("fetchedSettings.deviationValue -> " + fetchedSettings.deviationValue);
+
+        String hex = String.format("%03X", (int) fetchedSettings.desiredValue) +
+                String.format("%02X", (int) fetchedSettings.deviationValue);
+        System.out.println("hex hex hex -> " + hex);
 
         JSONObject jsonObject = new JSONObject();
         try {
@@ -182,7 +189,7 @@ public class GatewayService {
         try {
 
             HttpClient httpClient = HttpClientBuilder.create().build();
-            HttpGet request = new HttpGet(applicationProperties.getWebApiURL() + "api/farms/1/sensors/1/settings");
+            HttpGet request = new HttpGet(applicationProperties.getWebApiURL() + "api/farms/1/sensors/3/settings");
             HttpResponse response = null;
             response = httpClient.execute(request);
             if (response.getStatusLine().getStatusCode() == 204) {
