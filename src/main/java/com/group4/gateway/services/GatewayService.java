@@ -63,7 +63,7 @@ public class GatewayService {
             if (measurementModel.port != null) {
                 if (measurementModel.port == 2)
                     convertMeasurement(measurementModel);
-                else if (measurementModel.port == 3) {
+                else if (measurementModel.port == 3 && measurementModel.data != null && Integer.parseInt(measurementModel.data, 16) == 100) {
                     System.out.println("we are here!!!");
                     receiveConfiguration();
                 }
@@ -76,17 +76,17 @@ public class GatewayService {
     }
 
     private void convertMeasurement(MeasurementModel measurementModel) {
-            MeasurementToStore measurementToStore = new MeasurementToStore();
-            var senorId = parseMeasurementSensorId(measurementModel.port, measurementModel.data);
-            double value = Integer.parseInt(measurementModel.data, 16);
-       //    var s= new Date(measurementModel.ts);
+        MeasurementToStore measurementToStore = new MeasurementToStore();
+        var senorId = parseMeasurementSensorId(measurementModel.port, measurementModel.data);
+        double value = Integer.parseInt(measurementModel.data, 16);
+        //    var s= new Date(measurementModel.ts);
 
-            measurementToStore.dateTime = Instant.ofEpochMilli(measurementModel.ts)
+        measurementToStore.dateTime = Instant.ofEpochMilli(measurementModel.ts)
                 .atZone(ZoneId.systemDefault())
                 .toLocalDateTime().toString();
 
-            measurementToStore.value = (int)value;
-            measurementToStore.sensorId = senorId;
+        measurementToStore.value = (int) value;
+        measurementToStore.sensorId = senorId;
 
         storeMeasurements(measurementToStore);
 
@@ -131,10 +131,12 @@ public class GatewayService {
             if (data.length() <= 4) {
                 return 3;
             }
-        } if(port != null &&port==3){
+        }
+        if (port != null && port == 3) {
             receiveConfiguration();
 
-        }        return -1;
+        }
+        return -1;
     }
 
     private void storeMeasurements(MeasurementToStore measurementModel) {
@@ -167,15 +169,15 @@ public class GatewayService {
         System.out.println("fetchedSettings.desiredValue -> " + fetchedSettings.desiredValue);
         System.out.println("fetchedSettings.deviationValue -> " + fetchedSettings.deviationValue);
 
-        String hex = String.format("%03X", (int) fetchedSettings.desiredValue) +
-                String.format("%02X", (int) fetchedSettings.deviationValue);
-        System.out.println("hex hex hex -> " + hex);
+        String hex = String.format("%04X", (int) fetchedSettings.desiredValue) +
+                String.format("%04X", (int) fetchedSettings.deviationValue);
 
+        System.out.println("hex hex hex -> " + hex);
         JSONObject jsonObject = new JSONObject();
         try {
             jsonObject.put("cmd", "tx");
             jsonObject.put("EUI", applicationProperties.getEUI());
-            jsonObject.put("port", 3);
+            jsonObject.put("port", 1);
             jsonObject.put("data", hex);
         } catch (JSONException e) {
             e.printStackTrace();
