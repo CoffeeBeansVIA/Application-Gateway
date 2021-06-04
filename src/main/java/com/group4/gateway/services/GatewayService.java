@@ -37,6 +37,7 @@ public class GatewayService {
     private ApplicationProperties applicationProperties;
     private ILoRaWan loRaWan;
     private Gson gson = new Gson();
+    private long lastTs = 0;
 
     @Autowired
     public GatewayService(@Qualifier("LoRaWanImpl") ILoRaWan iLoRaWan) {
@@ -60,17 +61,23 @@ public class GatewayService {
         try {
             measurementModel = gson.fromJson(event.getNewValue().toString(), MeasurementModel.class);
 
+            if (lastTs != measurementModel.ts)
+                lastTs = measurementModel.ts;
+            else {
+                System.out.println("Received duplicate event");
+                return;
+            }
+
             if (measurementModel.port != null) {
                 if (measurementModel.port == 2)
                     convertMeasurement(measurementModel);
                 else if (measurementModel.port == 3 && measurementModel.data != null && Integer.parseInt(measurementModel.data, 16) == 100) {
-                    System.out.println("we are here!!!");
                     receiveConfiguration();
                 }
             }
 
         } catch (Exception e) {
-            e.printStackTrace();
+//            e.printStackTrace();
         }
 
     }
@@ -133,8 +140,8 @@ public class GatewayService {
             }
         }
         if (port != null && port == 3) {
+            System.out.println("Requesting initial sensor configuration");
             receiveConfiguration();
-
         }
         return -1;
     }
@@ -145,12 +152,14 @@ public class GatewayService {
             StringEntity entity = new StringEntity(measurementModelString,
                     ContentType.APPLICATION_JSON);
 
+            System.out.println("Received new sensor measurements :: " + measurementModelString);
+
             HttpClient httpClient = HttpClientBuilder.create().build();
             HttpPost request = new HttpPost(applicationProperties.getWebApiURL() + "api/farms/1/sensors/" + measurementModel.sensorId + "/measurements");
             request.setEntity(entity);
 
             HttpResponse response = httpClient.execute(request);
-            System.out.println("Store Measurements " + response.getStatusLine().getStatusCode());
+            System.out.println("Measurements stored successfully " + response.getStatusLine().getStatusCode() + "(OK)");
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -166,13 +175,10 @@ public class GatewayService {
         if (fetchedSettings.desiredValue == 0 && fetchedSettings.deviationValue == 0) {
         }
 
-        System.out.println("fetchedSettings.desiredValue -> " + fetchedSettings.desiredValue);
-        System.out.println("fetchedSettings.deviationValue -> " + fetchedSettings.deviationValue);
-
         String hex = String.format("%04X", (int) fetchedSettings.desiredValue) +
                 String.format("%04X", (int) fetchedSettings.deviationValue);
 
-        System.out.println("hex hex hex -> " + hex);
+//        System.out.println("hex hex hex -> " + hex);
         JSONObject jsonObject = new JSONObject();
         try {
             jsonObject.put("cmd", "tx");
@@ -182,8 +188,8 @@ public class GatewayService {
         } catch (JSONException e) {
             e.printStackTrace();
         }
-        System.out.println(hex);
         loRaWan.sendMessage(jsonObject.toString());
+        System.out.println("JSON sent to LoRoWAN :: " + jsonObject.toString());
     }
 
     private SensorSettingsModel requestConfigurations() {
@@ -200,7 +206,7 @@ public class GatewayService {
             String responseBody = EntityUtils.toString(response.getEntity());
 
             fetchedSettings = gson.fromJson(responseBody, SensorSettingsModel.class);
-            System.out.println("WEB API " + response.getStatusLine().getStatusCode());
+            System.out.println("Initial sensor configuration successfully fetched");
         } catch (IOException e) {
             e.printStackTrace();
         }

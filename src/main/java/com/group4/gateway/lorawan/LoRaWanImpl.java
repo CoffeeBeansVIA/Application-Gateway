@@ -33,9 +33,8 @@ public class LoRaWanImpl implements ILoRaWan {
         gson =new Gson();
         support = new PropertyChangeSupport(this);
         executorService = Executors.newScheduledThreadPool(1);
-
-
     }
+
     public void init(){
        createConnection();
     }
@@ -55,7 +54,7 @@ public class LoRaWanImpl implements ILoRaWan {
     public void sendMessage(String json) {
         server.sendText(json, true);
 
-        System.out.println("sendDownLink executed");
+//        System.out.println("sendDownLink executed");
     }
 
     //onOpen()
@@ -63,7 +62,7 @@ public class LoRaWanImpl implements ILoRaWan {
         // This WebSocket will invoke onText, onBinary, onPing, onPong or onClose methods on the associated listener (i.e. receive methods) up to n more times
         webSocket.request(1);
 
-        System.out.println("WebSocket Listener has been opened for requests.");
+        System.out.println("Web-sockets connection established.");
         JSONObject json = new JSONObject();
         try {
             json.put("cmd", "rx");
@@ -112,16 +111,17 @@ public class LoRaWanImpl implements ILoRaWan {
         webSocket.request(1);
 //        System.out.println("Pong: Client ---> Server");
 //        System.out.println(message.asCharBuffer().toString());
-        return new CompletableFuture().completedFuture("Pong completed.").thenAccept(System.out::println);
+        return new CompletableFuture().thenAccept(System.out::println);
     }
 
     //onText()
     public CompletionStage<?> onText(WebSocket webSocket, CharSequence data, boolean last) {
         try {
              this.data +=  (new JSONObject(data.toString())).toString(4);
-            System.out.println("Data Received "+data);
+//            System.out.println("Data Received " + data);
         } catch (JSONException e) {
-            e.printStackTrace();
+            System.out.println("Duplicate data" + data);
+//            e.printStackTrace();
         }
         // As sequence received can be send on multiple occasions, method collects until boolean last is true, then proceeds with the data.
         if (last) {
